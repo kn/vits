@@ -9,3 +9,4 @@ torch==1.6.0
 torchvision==0.7.0
 Unidecode==1.1.1
 wandb
+encodec>=0.1.1,<1
