@@ -12,6 +12,7 @@ import torch.multiprocessing as mp
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.cuda.amp import autocast, GradScaler
+import wandb
 
 import commons
 import utils
@@ -53,6 +54,8 @@ def main():
 def run(rank, n_gpus, hps):
   global global_step
   if rank == 0:
+    wandb.init(project='vits', sync_tensorboard=True)
+
     logger = utils.get_logger(hps.model_dir)
     logger.info(hps)
     utils.check_git_hash(hps.model_dir)
