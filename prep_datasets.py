@@ -5,6 +5,7 @@ import random
 import re
 from encodec.utils import convert_audio
 import torchaudio
+from tqdm import tqdm
 
 
 def main(dataset_dir, out_dir, num_val, sampling_rate):
@@ -16,13 +17,12 @@ def main(dataset_dir, out_dir, num_val, sampling_rate):
                 continue
             audio_paths.append(os.path.join(root, file))
     os.makedirs(out_dir, exist_ok=True)
-    new_audio_paths = []
-    for audio_path in audio_paths:
+    print(f"Converting audio files to {sampling_rate} Hz")
+    for audio_path in tqdm(audio_paths):
         audio, sr = torchaudio.load(audio_path) # type: ignore
         audio = convert_audio(audio, sr, sampling_rate, 1)
         new_audio_path = os.path.join(out_dir, os.path.basename(audio_path))
         torchaudio.save(new_audio_path, audio, sampling_rate) # type: ignore
-        new_audio_paths.append(new_audio_path)
 
     id_to_txt = {}
     for root, _, filenames in os.walk(dataset_dir):
@@ -44,11 +44,12 @@ def main(dataset_dir, out_dir, num_val, sampling_rate):
 
     manifest_path = os.path.join(out_dir, "mydataset_filelist.txt")
     with open(manifest_path, "w") as f:
-        for new_audio_path in new_audio_paths:
-            id = os.path.basename(new_audio_path).split(".")[0]
-            with open(id_to_txt[id]) as t:
-                text = t.read().replace("\n", " ").strip()
-                f.write(f"{new_audio_path}|{text}\n")
+        for root, _, filenames in os.walk(out_dir):
+            for filename in fnmatch.filter(filenames, "*.wav"):
+                id = filename.split(".")[0]
+                with open(os.path.join(root, f"{id}.txt")) as t:
+                    text = t.read().replace("\n", " ").strip()
+                f.write(f"{os.path.join(root, filename)}|{text}\n")
     
     with open(manifest_path) as f:
         lines = f.readlines()
